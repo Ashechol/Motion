@@ -1,0 +1,7 @@
+.idea
+*.tar.xz
+*.pyc
+wandb
+checkpoint/*.pth.tr
+demo/output
+/demo/lib/checkpoint
