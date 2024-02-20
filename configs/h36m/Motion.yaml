@@ -24,13 +24,6 @@ use_adaptive_fusion: True
 num_heads: 8
 qkv_bias: True
 qkv_scale: null
-hierarchical: False
-use_temporal_similarity: True # Only useful when use_tcn = False
-neighbour_num: 2  # Only useful when use_temporal_similarity = True
-temporal_connection_len: 1 # Only useful when use_tcn = False, use_temporal_similarity = False
-use_tcn: False
-graph_only: False
-n_frames: 243 # 243 if add_velocity is False else 242
 
 # Data
 data_root: data/motion3d/
@@ -40,6 +33,7 @@ dt_file: h36m_sh_conf_cam_source_final.pkl
 num_joints: 17
 root_rel: True # Normalizing joints relative to the root joint
 add_velocity: False
+n_frames: 243 # 243 if add_velocity is False else 242
 
 # Loss
 lambda_3d_velocity: 20.0
@@ -50,5 +44,5 @@ lambda_a: 0.0
 lambda_av: 0.0
 
 # Augmentation
-use_proj_as_2d: false
+use_proj_as_2d: False
 flip: True

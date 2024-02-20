@@ -1,3 +1,5 @@
+# from https://github.com/TaatiTeam/MotionAGFormer/blob/master/model/modules/graph.py
+
 import math
 
 import torch
@@ -11,8 +13,8 @@ CONNECTIONS = {10: [9], 9: [8, 10], 8: [7, 9], 14: [15, 8], 15: [16, 14], 11: [1
 class GCN(nn.Module):
     def __init__(self, dim_in, dim_out, num_nodes, neighbour_num=4, mode='spatial', use_temporal_similarity=True,
                  temporal_connection_len=1, connections=None):
-        self.nodes_ = """
-        :param dim_int: Channel input dimension
+        """
+        :param dim_in: Channel input dimension
         :param dim_out: Channel output dimension
         :param num_nodes: Number of nodes
         :param neighbour_num: Neighbor numbers. Used in temporal GCN to create edges

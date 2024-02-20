@@ -24,15 +24,16 @@ from torch.utils.data import DataLoader
 
 from utils.learning import load_model, AverageMeter, decay_lr_exponentially
 from utils.tools import count_param_numbers
-from utils.data import Augmenter2D
 
 import platform
 
 sys = platform.system()
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/h36m/MotionAGFormer-base.yaml", help="Path to the config file.")
+    parser.add_argument("--config", type=str, default="configs/h36m/MotionAGFormer-base.yaml",
+                        help="Path to the config file.")
     parser.add_argument('-c', '--checkpoint', type=str, metavar='PATH',
                         help='checkpoint directory')
     parser.add_argument('--new-checkpoint', type=str, metavar='PATH', default='checkpoint',
@@ -295,16 +296,16 @@ def train(args, opts):
         if opts.resume:
             if opts.use_wandb:
                 wandb.init(id=wandb_id,
-                        project='HPE',
-                        resume="must",
-                        settings=wandb.Settings(start_method='fork' if sys == 'Linux' else 'thread'))
+                           project='HPE',
+                           resume="must",
+                           settings=wandb.Settings(start_method='fork' if sys == 'Linux' else 'thread'))
         else:
             print(f"Run ID: {wandb_id}")
             if opts.use_wandb:
                 wandb.init(id=wandb_id,
-                        name=opts.wandb_name,
-                        project='HPE',
-                        settings=wandb.Settings(start_method='fork' if sys == 'Linux' else 'thread'))
+                           name=opts.wandb_name,
+                           project='HPE',
+                           settings=wandb.Settings(start_method='fork' if sys == 'Linux' else 'thread'))
                 wandb.config.update({"run_id": wandb_id})
                 wandb.config.update(args)
                 installed_packages = {d.project_name: d.version for d in pkg_resources.working_set}

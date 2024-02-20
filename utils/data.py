@@ -78,7 +78,6 @@ class Augmenter2D(object):
         return motion_2d
     
 
-
 def resample(ori_len, target_len, replay=False, randomness=True):
     """Adapted from https://github.com/Walter0807/MotionBERT/blob/main/lib/utils/utils_data.py#L68"""
     if replay:

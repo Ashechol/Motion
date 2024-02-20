@@ -5,3 +5,4 @@ wandb
 checkpoint/*.pth.tr
 demo/output
 /demo/lib/checkpoint
+data/motion3d/H36M*

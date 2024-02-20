@@ -13,8 +13,7 @@ import copy
 
 sys.path.append(os.getcwd())
 from demo.lib.utils import normalize_screen_coordinates, camera_to_world
-from model.MotionAGFormer import MotionAGFormer
-
+from model.Model import Model
 import matplotlib
 import matplotlib.pyplot as plt 
 from mpl_toolkits.mplot3d import Axes3D
@@ -152,6 +151,7 @@ def turn_into_clips(keypoints):
                 clips.append(keypoints_clip)
     return clips, downsample
 
+
 def turn_into_h36m(keypoints):
     new_keypoints = np.zeros_like(keypoints)
     new_keypoints[..., 0, :] = (keypoints[..., 11, :] + keypoints[..., 12, :]) * 0.5
@@ -175,41 +175,47 @@ def turn_into_h36m(keypoints):
     return new_keypoints
 
 
-
 def get_pose3D(video_path, output_dir):
+    # args, _ = argparse.ArgumentParser().parse_known_args()
+    # args.n_layers, args.dim_in, args.dim_feat, args.dim_rep, args.dim_out = 16, 3, 128, 512, 3
+    # args.mlp_ratio, args.act_layer = 4, nn.GELU
+    # args.attn_drop, args.drop, args.drop_path = 0.0, 0.0, 0.0
+    # args.use_layer_scale, args.layer_scale_init_value, args.use_adaptive_fusion = True, 0.00001, True
+    # args.num_heads, args.qkv_bias, args.qkv_scale = 8, False, None
+    # args.hierarchical = False
+    # args.use_temporal_similarity, args.neighbour_num, args.temporal_connection_len = True, 2, 1
+    # args.use_tcn, args.graph_only = False, False
+    # args.n_frames = 243
+    # args = vars(args)
+
     args, _ = argparse.ArgumentParser().parse_known_args()
     args.n_layers, args.dim_in, args.dim_feat, args.dim_rep, args.dim_out = 16, 3, 128, 512, 3
     args.mlp_ratio, args.act_layer = 4, nn.GELU
     args.attn_drop, args.drop, args.drop_path = 0.0, 0.0, 0.0
     args.use_layer_scale, args.layer_scale_init_value, args.use_adaptive_fusion = True, 0.00001, True
-    args.num_heads, args.qkv_bias, args.qkv_scale = 8, False, None
-    args.hierarchical = False
-    args.use_temporal_similarity, args.neighbour_num, args.temporal_connection_len = True, 2, 1
-    args.use_tcn, args.graph_only = False, False
+    args.num_heads, args.qkv_bias, args.qkv_scale = 8, True, None
     args.n_frames = 243
     args = vars(args)
 
-    ## Reload 
-    model = nn.DataParallel(MotionAGFormer(**args)).cuda()
+    # Reload
+    model = nn.DataParallel(Model(**args)).cuda()
 
-    # Put the pretrained model of MotionAGFormer in 'checkpoint/'
-    model_path = sorted(glob.glob(os.path.join('checkpoint', 'motionagformer-b-h36m.pth.tr')))[0]
+    # Put the pretrained model in 'checkpoint/'
+    model_path = sorted(glob.glob(os.path.join('checkpoint', 'best_epoch.pth.tr')))[0]
 
     pre_dict = torch.load(model_path)
     model.load_state_dict(pre_dict['model'], strict=True)
 
     model.eval()
 
-    ## input
+    # input
     keypoints = np.load(output_dir + 'input_2D/keypoints.npz', allow_pickle=True)['reconstruction']
     # keypoints = np.load('demo/lakeside3.npy')
     # keypoints = keypoints[:240]
     # keypoints = keypoints[None, ...]
     # keypoints = turn_into_h36m(keypoints)
-    
 
     clips, downsample = turn_into_clips(keypoints)
-
 
     cap = cv2.VideoCapture(video_path)
     video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))

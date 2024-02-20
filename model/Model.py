@@ -4,11 +4,9 @@ import torch
 from torch import nn
 from timm.models.layers import DropPath
 
-from model.modules.attention import Attention, TVCrossAttention
+from model.modules.attention import Attention, TVCAttention
 from model.modules.graph import GCN
 from model.modules.mlp import MLP
-
-from thop import profile
 
 
 class FormerBlock(nn.Module):
@@ -37,7 +35,7 @@ class FormerBlock(nn.Module):
         elif mixer_type == 'graph':
             self.mixer = GCN(dim, dim, num_nodes=17, mode='spatial')
         elif mixer_type == 'tvc':
-            self.mixer = TVCrossAttention(dim, dim, num_heads, qkv_bias, qk_scale, attn_drop, drop)
+            self.mixer = TVCAttention(dim, dim, num_heads, qkv_bias, qk_scale, attn_drop, drop)
 
     def forward(self, x):
         """
@@ -94,9 +92,6 @@ class MotionBlock(nn.Module):
         """
         x: tensor with shape [B, T, J, C]
         """
-
-        # x_attn = self.att_spatial(x)
-        # x_graph = self.graph_spatial(x)
 
         if self.use_adaptive_fusion:
             x = self.adaptive_fusion(self.att_spatial(x), self.graph_spatial(x))
@@ -165,7 +160,7 @@ class Model(nn.Module):
 
     def forward(self, x, return_rep=False):
         """
-        :param x: tensor with shape [B, T, J, C] (T=243, J=17, C=3)
+        :param x: tensor with shape [B, T, J, C]
         :param return_rep: Returns motion representation feature volume (In case of using this as backbone)
         """
         x = self.joints_embed(x)
@@ -186,12 +181,13 @@ class Model(nn.Module):
 
 if __name__ == '__main__':
     import warnings
+    from thop import profile
 
     warnings.filterwarnings('ignore')
     b, c, t, j = 1, 3, 243, 17
     random_x = torch.randn((b, t, j, c)).to('cuda')
 
-    model = Model(n_layers=8, dim_in=3, dim_feat=256, mlp_ratio=2, n_frames=t, qkv_bias=True).to('cuda')
+    model = Model(n_layers=16, dim_in=3, dim_feat=128, mlp_ratio=4, n_frames=t, qkv_bias=True).to('cuda')
 
     model.eval()
 

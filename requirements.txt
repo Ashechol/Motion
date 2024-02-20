@@ -14,3 +14,4 @@ numba
 scikit-image
 filterpy
 yacs
+thop

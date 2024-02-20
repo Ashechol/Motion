@@ -7,7 +7,6 @@ class Attention(nn.Module):
     A simplified version of attention from DSTFormer that also considers x tensor to be (B, T, J, C) instead of
     (B * T, J, C)
     """
-
     def __init__(self, dim_in, dim_out, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,
                  mode='spatial'):
         super().__init__()
@@ -61,38 +60,6 @@ class Attention(nn.Module):
         x = attn @ vt  # (B, H, J, T, C)
         x = x.permute(0, 3, 2, 1, 4).reshape(B, T, J, C * self.num_heads)
         return x  # (B, T, J, C)
-
-
-class TemporalAttention(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
-        super().__init__()
-        self.num_heads = num_heads
-        head_dim = dim_in // num_heads
-        self.scale = qk_scale or head_dim ** -0.5
-
-        self.attn_drop = nn.Dropout(attn_drop)
-        self.proj = nn.Linear(dim_in, dim_out)
-        self.qkv = nn.Linear(dim_in, dim_in * 3, bias=qkv_bias)
-        self.proj_drop = nn.Dropout(proj_drop)
-
-    def forward(self, x):
-        b, t, j, c = x.shape
-
-        # (3, B, H, T, J, C)
-        qkv = self.qkv(x).reshape(b, t, j, 3, self.num_heads, c // self.num_heads).permute(3, 0, 4, 1, 2, 5)
-        # (B, H, J, T, C)
-        q, k, v = qkv[0].transpose(2, 3), qkv[1].transpose(2, 3), qkv[2].transpose(2, 3)
-
-        attn = (q @ k.transpose(-2, -1)) * self.scale  # (B, H, J, T, T)
-        attn = attn.softmax(dim=-1)
-        attn = self.attn_drop(attn)
-
-        x = attn @ v  # (B, H, J, T, C)
-        x = x.permute(0, 3, 2, 1, 4).reshape(b, t, j, c)  # (B, T, J, C)
-
-        x = self.proj(x)
-        x = self.proj_drop(x)
-        return x
 
 
 class VelocityCrossAttention(nn.Module):
@@ -154,11 +121,14 @@ class VelocityCrossAttention(nn.Module):
         return x
 
 
-class TVCrossAttention(nn.Module):
+class TVCAttention(nn.Module):
+    """
+    Temporal-Velocity Cross Attention
+    """
     def __init__(self, dim_in, dim_out, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__()
 
-        self.temporal = TemporalAttention(dim_in, dim_out, num_heads, qkv_bias, qk_scale, attn_drop, proj_drop)
+        self.temporal = Attention(dim_in, dim_out, num_heads, qkv_bias, qk_scale, attn_drop, proj_drop, mode='temporal')
         self.velocity = VelocityCrossAttention(dim_in, dim_out, num_heads, qkv_bias, qk_scale, attn_drop, proj_drop)
 
         self.fusion = nn.Linear(dim_out * 2, 2)
