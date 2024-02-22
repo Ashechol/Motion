@@ -192,9 +192,8 @@ def get_pose3D(video_path, output_dir):
     args.n_layers, args.dim_in, args.dim_feat, args.dim_rep, args.dim_out = 16, 3, 128, 512, 3
     args.mlp_ratio, args.act_layer = 4, nn.GELU
     args.attn_drop, args.drop, args.drop_path = 0.0, 0.0, 0.0
-    args.use_layer_scale, args.layer_scale_init_value, args.use_adaptive_fusion = True, 0.00001, True
+    args.use_layer_scale, args.layer_scale_init_value = True, 0.00001
     args.num_heads, args.qkv_bias, args.qkv_scale = 8, True, None
-    args.n_frames = 243
     args = vars(args)
 
     # Reload

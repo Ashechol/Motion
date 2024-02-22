@@ -70,12 +70,10 @@ def load_model(args):
                       drop_path=args.drop_path,
                       use_layer_scale=args.use_layer_scale,
                       layer_scale_init_value=args.layer_scale_init_value,
-                      use_adaptive_fusion=args.use_adaptive_fusion,
                       num_heads=args.num_heads,
                       qkv_bias=args.qkv_bias,
                       qkv_scale=args.qkv_scale,
-                      num_joints=args.num_joints,
-                      n_frames=args.n_frames)
+                      num_joints=args.num_joints)
     else:
         raise Exception("Undefined model name")
 

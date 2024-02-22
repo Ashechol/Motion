@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from model.modules.graph import GCN
 
 
 class Attention(nn.Module):
@@ -7,12 +8,12 @@ class Attention(nn.Module):
     A simplified version of attention from DSTFormer that also considers x tensor to be (B, T, J, C) instead of
     (B * T, J, C)
     """
-    def __init__(self, dim_in, dim_out, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,
+    def __init__(self, dim_in, dim_out, num_heads=8, qkv_bias=False, qkv_scale=None, attn_drop=0., proj_drop=0.,
                  mode='spatial'):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim_in // num_heads
-        self.scale = qk_scale or head_dim ** -0.5
+        self.scale = qkv_scale or head_dim ** -0.5
 
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj = nn.Linear(dim_in, dim_out)
@@ -121,15 +122,43 @@ class VelocityCrossAttention(nn.Module):
         return x
 
 
+class SGAttention(nn.Module):
+    def __init__(self, dim_in, dim_out, mlp_ratio=4., act_layer=nn.GELU, attn_drop=0., drop=0., drop_path=0.,
+                 num_heads=8, qkv_bias=False, qkv_scale=None):
+        super().__init__()
+
+        self.spatial = Attention(dim_in, dim_out, num_heads, qkv_bias, qkv_scale, mode='spatial')
+        self.graph = GCN(dim_in, dim_out, 17, mode='spatial')
+
+        self.fusion = nn.Linear(dim_out * 2, 2)
+        self._init_fusion()
+
+    def _init_fusion(self):
+        self.fusion.weight.data.fill_(0)
+        self.fusion.bias.data.fill_(0.5)
+
+    def adaptive_fusion(self, a, b):
+        alpha = torch.cat((a, b), dim=-1)
+        alpha = self.fusion(alpha)
+        alpha = alpha.softmax(dim=-1)
+
+        return a * alpha[..., 0:1] + b * alpha[..., 1:2]
+
+    def forward(self, x):
+        # B T J C
+
+        return self.adaptive_fusion(self.spatial(x), self.graph(x))
+
+
 class TVCAttention(nn.Module):
     """
     Temporal-Velocity Cross Attention
     """
-    def __init__(self, dim_in, dim_out, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
+    def __init__(self, dim_in, dim_out, num_heads=8, qkv_bias=False, qkv_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__()
 
-        self.temporal = Attention(dim_in, dim_out, num_heads, qkv_bias, qk_scale, attn_drop, proj_drop, mode='temporal')
-        self.velocity = VelocityCrossAttention(dim_in, dim_out, num_heads, qkv_bias, qk_scale, attn_drop, proj_drop)
+        self.temporal = Attention(dim_in, dim_out, num_heads, qkv_bias, qkv_scale, attn_drop, proj_drop, mode='temporal')
+        self.velocity = VelocityCrossAttention(dim_in, dim_out, num_heads, qkv_bias, qkv_scale, attn_drop, proj_drop)
 
         self.fusion = nn.Linear(dim_out * 2, 2)
         self._init_fusion()
